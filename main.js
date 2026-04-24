@@ -1,6 +1,6 @@
 // App State & Constants
-const PLAN_DURATION_DAYS = 30;
-const START_DATE = new Date(2026, 3, 25); // Abril 25, 2026
+const PLAN_DURATION_DAYS = 31;
+const START_DATE = new Date(2026, 3, 24); // Abril 24, 2026
 START_DATE.setHours(0, 0, 0, 0);
 
 let appState = {
@@ -31,10 +31,10 @@ function initializeDays() {
     let isSpecial = false;
     let specialTitle = '';
     
-    if (i === 15) { // 10 Mayo
+    if (i === 16) { // 10 Mayo
       isSpecial = true;
       specialTitle = 'Trail 10K';
-    } else if (i === 29) { // 24 Mayo
+    } else if (i === 30) { // 24 Mayo
       isSpecial = true;
       specialTitle = '10K DIR';
     }
@@ -54,7 +54,7 @@ function initializeDays() {
 }
 
 function loadState() {
-  const saved = localStorage.getItem('trainingTrackerV2');
+  const saved = localStorage.getItem('trainingTrackerV3');
   if (saved) {
     try {
       appState = JSON.parse(saved);
@@ -65,14 +65,14 @@ function loadState() {
 }
 
 function saveState() {
-  localStorage.setItem('trainingTrackerV2', JSON.stringify(appState));
+  localStorage.setItem('trainingTrackerV3', JSON.stringify(appState));
 }
 
 // Helpers
 function getFormattedDate(dayIndex, date) {
   const options = { day: 'numeric', month: 'long' };
-  const formatted = date.toLocaleDateString('es-ES', options);
-  return `Día ${dayIndex + 1}: ${formatted}`;
+  const formatted = date.toLocaleDateString('ca-ES', options);
+  return `Dia ${dayIndex + 1}: ${formatted}`;
 }
 
 function getTodayIndex() {
@@ -115,7 +115,7 @@ function initChart() {
       scales: {
         y: {
           beginAtZero: true,
-          ticks: { stepSize: 1 },
+          ticks: { stepSize: 1, display: false }, // Hides the 0, 1 labels
           grid: { color: 'rgba(255,255,255,0.1)' }
         },
         x: { grid: { display: false } }
@@ -137,9 +137,9 @@ function getChartData() {
   });
 
   return {
-    labels: ['Correr', 'Pilates', 'Natación', 'Descanso'],
+    labels: ['Córrer', 'Pilates', 'Natació', 'Descans'],
     datasets: [{
-      label: 'Sesiones Completadas',
+      label: 'Sessions Completades',
       data: [counts['Correr'], counts['Pilates'], counts['Natación'], counts['Descanso']],
       backgroundColor: ['#ff00ff', '#00d2ff', '#00d2ff', 'rgba(255, 255, 255, 0.5)'],
       borderColor: ['#ff1493', '#00ffff', '#00ffff', '#ffffff'],
@@ -158,6 +158,14 @@ function updateChart() {
 
 // Render Logic
 function renderApp() {
+  // Update Progress Bar
+  const completedCount = appState.days.filter(d => d.status === 'COMPLETED').length;
+  const ratio = Math.min(completedCount / PLAN_DURATION_DAYS, 1);
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  if (progressBar) progressBar.style.width = `${ratio * 100}%`;
+  if (progressText) progressText.textContent = `Dia ${getTodayIndex() + 1} de ${PLAN_DURATION_DAYS} (${completedCount} completats)`;
+
   daysCarousel.innerHTML = '';
   
   appState.days.forEach(day => {
@@ -166,7 +174,7 @@ function renderApp() {
     cardEl.className = `glass-panel day-card ${day.status === 'COMPLETED' ? 'status-completed' : ''}`;
     cardEl.id = `day-card-${day.index}`;
     
-    let html = `<div class="interaction-date">${day.dateStr} ${isToday ? '(Hoy)' : ''}</div>`;
+    let html = `<div class="interaction-date">${day.dateStr} ${isToday ? '(Avui)' : ''}</div>`;
 
     if (day.status === 'PENDING') {
       html += renderPendingState(day);
@@ -185,22 +193,22 @@ function renderApp() {
 
 function renderPendingState(day) {
   if (day.isSpecial) {
-    const subtitle = day.index === 15 ? 'A darlo todo y disfrutar.' : 'A volar por el asfalto.';
-    const titleObj = day.index === 15 ? '⛰️ ¡HOY ES EL TRAIL 10K!' : '🏁 ¡10K DIR!';
+    const subtitle = day.index === 16 ? 'A donar-ho tot i gaudir.' : 'A volar per l\'asfalt.';
+    const titleObj = day.index === 16 ? '⛰️ AVUI ÉS EL TRAIL 10K!' : '🏁 10K DIR!';
     return `
       <div class="special-message">${titleObj}</div>
       <div class="interaction-question">${subtitle}</div>
-      <button class="btn btn-pink" style="margin-top:15px; width:100%" onclick="setPlanned(${day.index}, 'Especial', '${day.specialTitle}')">Marcar intención de ir</button>
+      <button class="btn btn-pink" style="margin-top:15px; width:100%" onclick="setPlanned(${day.index}, 'Especial', '${day.specialTitle}')">Marcar intenció d'anar-hi</button>
     `;
   }
 
   return `
-    <div class="interaction-question">¿Qué te pide el cuerpo hoy?</div>
+    <div class="interaction-question">Què et demana el cos avui?</div>
     <div class="btn-grid" id="main-options-${day.index}">
-      <button class="btn btn-pink" onclick="showSubOptions(${day.index})">🏃‍♀️ Correr</button>
-      <button class="btn" onclick="setPlanned(${day.index}, 'Pilates', '¡A fortalecer ese core y ganar flexibilidad! 🧘‍♀️✨')">🧘‍♀️ Pilates</button>
-      <button class="btn" onclick="setPlanned(${day.index}, 'Nadar', '¡Al agua, sirena! Desconecta la mente y relaja las piernas mientras trabajas el cardio. 🏊‍♀️🌊')">🏊‍♀️ Nadar</button>
-      <button class="btn" onclick="setPlanned(${day.index}, 'Descansar', 'El descanso es parte del entrenamiento. ¡Recarga pilas que te lo has ganado! 🔋🛋️')">🛋️ Descansar</button>
+      <button class="btn btn-pink" onclick="showSubOptions(${day.index})">🏃‍♀️ Córrer</button>
+      <button class="btn" onclick="setPlanned(${day.index}, 'Pilates', 'A enfortir aquest core i guanyar flexibilitat! 🧘‍♀️✨')">🧘‍♀️ Pilates</button>
+      <button class="btn" onclick="setPlanned(${day.index}, 'Nadar', 'A l\\'aigua, sirena! Desconnecta la ment i relaxa les cames mentre treballes el cardio. 🏊‍♀️🌊')">🏊‍♀️ Nedar</button>
+      <button class="btn" onclick="setPlanned(${day.index}, 'Descansar', 'El descans és part de l\\'entrenament. Recarrega piles que t\\'ho has guanyat! 🔋🛋️')">🛋️ Descansar</button>
     </div>
     <div id="sub-options-area-${day.index}"></div>
   `;
@@ -210,15 +218,15 @@ window.showSubOptions = function(dayIndex) {
   const container = document.getElementById(`sub-options-area-${dayIndex}`);
   if (!container) return;
   
-  const suaveDesc = 'Rodaje disfrutón: 40-45 min en Z2 (5:30 min/km). ¡A sumar kilómetros con una sonrisa!';
-  const medioDesc = 'Cambios de ritmo: 15 min Z2 (5:30) + 4 x (3 min Z3 @ 5:00 + 2 min Z2) + 10 min suaves.';
-  const fuerteDesc = 'Series picantes: 15 min calentamiento + 6 x 400m en Z4 (4:30 min/km, rec. 90") + 10 min enfriamiento.';
+  const suaveDesc = 'Rodatge per gaudir: 40-45 min a Z2 (5:30 min/km). A sumar quilòmetres amb un somriure!';
+  const medioDesc = 'Canvis de ritme: 15 min Z2 (5:30) + 4 x (3 min Z3 @ 5:00 + 2 min Z2) + 10 min suaus.';
+  const fuerteDesc = 'Sèries picants: 15 min escalfament + 6 x 400m a Z4 (4:30 min/km, rec. 90") + 10 min refredament.';
 
   container.innerHTML = `
     <div class="btn-grid-3" style="margin-top: 15px;">
-      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Correr (Suave): ${suaveDesc}')">Suave</button>
-      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Correr (Medio): ${medioDesc}')">Medio</button>
-      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Correr (Fuerte): ${fuerteDesc}')">Fuerte</button>
+      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Córrer (Suau): ${suaveDesc}')">Suau</button>
+      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Córrer (Mig): ${medioDesc}')">Mig</button>
+      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Córrer (Fort): ${fuerteDesc}')">Fort</button>
     </div>
   `;
 };
@@ -233,13 +241,14 @@ window.setPlanned = function(dayIndex, category, description) {
 };
 
 function renderPlannedState(day) {
+  const displayCat = day.category === 'Correr' ? 'Córrer' : (day.category === 'Nadar' ? 'Nedar' : (day.category === 'Descansar' ? 'Descans' : day.category));
   return `
-    <div class="interaction-question" style="color:var(--neon-pink); font-weight:700;">Planeado: ${day.category}</div>
+    <div class="interaction-question" style="color:var(--neon-pink); font-weight:700;">Planejat: ${displayCat}</div>
     <div class="workout-message ${day.category==='Correr'||day.category==='Especial'?'workout-message-pink':''}">
       ${day.description}
     </div>
-    <button class="btn btn-success" onclick="setCompleted(${day.index})">✅ Marcar como Completado</button>
-    <button class="btn btn-reset-day" onclick="resetDay(${day.index})">🔄 Cambiar (Resetear)</button>
+    <button class="btn btn-success" onclick="setCompleted(${day.index})">✅ Marcar com a Completat</button>
+    <button class="btn btn-reset-day" onclick="resetDay(${day.index})">🔄 Canviar (Resetejar)</button>
   `;
 }
 
@@ -252,11 +261,11 @@ window.setCompleted = function(dayIndex) {
 
 function renderCompletedState(day) {
   return `
-    <div class="badge-completed">¡COMPLETADO! 🎉</div>
+    <div class="badge-completed">¡COMPLETAT! 🎉</div>
     <div class="workout-message ${day.category==='Correr'||day.category==='Especial'?'workout-message-pink':''}">
       ${day.description}
     </div>
-    <button class="btn btn-reset-day" onclick="resetDay(${day.index})">🔄 Deshacer / Cambiar</button>
+    <button class="btn btn-reset-day" onclick="resetDay(${day.index})">🔄 Desfer / Canviar</button>
   `;
 }
 

@@ -41,6 +41,37 @@ h1, h2, h3 { margin: 0; }
   margin-bottom: 5px;
 }
 
+/* Progress Bar */
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+  box-shadow: 0 0 10px var(--neon-pink);
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  font-weight: 700;
+  color: var(--neon-blue);
+  text-shadow: 0 0 5px var(--neon-blue);
+}
+
 .neon-title {
   color: #fff;
   font-size: 2.2rem;
