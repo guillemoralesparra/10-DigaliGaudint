@@ -218,17 +218,97 @@ window.showSubOptions = function(dayIndex) {
   const container = document.getElementById(`sub-options-area-${dayIndex}`);
   if (!container) return;
   
-  const suaveDesc = 'Rodatge per gaudir: 40-45 min a Z2 (5:30 min/km). A sumar quilòmetres amb un somriure!';
-  const medioDesc = 'Canvis de ritme: 15 min Z2 (5:30) + 4 x (3 min Z3 @ 5:00 + 2 min Z2) + 10 min suaus.';
-  const fuerteDesc = 'Sèries picants: 15 min escalfament + 6 x 400m a Z4 (4:30 min/km, rec. 90") + 10 min refredament.';
-
   container.innerHTML = `
-    <div class="btn-grid-3" style="margin-top: 15px;">
-      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Córrer (Suau): ${suaveDesc}')">Suau</button>
-      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Córrer (Mig): ${medioDesc}')">Mig</button>
-      <button class="btn btn-pink" onclick="setPlanned(${dayIndex}, 'Correr', 'Córrer (Fort): ${fuerteDesc}')">Fort</button>
+    <div class="btn-grid" style="margin-top: 15px;">
+      <button class="btn btn-pink" onclick="showTiradaForm(${dayIndex})">📍 Tirada Llarga</button>
+      <button class="btn btn-pink" onclick="showSeriesForm(${dayIndex})">⚡ Sèries</button>
     </div>
+    <div id="correr-form-area-${dayIndex}"></div>
   `;
+};
+
+window.showTiradaForm = function(dayIndex) {
+  const area = document.getElementById(`correr-form-area-${dayIndex}`);
+  let duradaOptions = '';
+  for(let i = 20; i <= 120; i+=5) {
+    duradaOptions += `<option value="${i}">${i} minuts</option>`;
+  }
+  
+  let ritmeOptions = '';
+  for(let m = 3; m <= 8; m++) {
+    for(let s = 0; s < 60; s+=15) {
+      if(m===8 && s>0) break; 
+      const sStr = s === 0 ? '00' : s;
+      ritmeOptions += `<option value="${m}:${sStr}">${m}:${sStr} min/km</option>`;
+    }
+  }
+
+  area.innerHTML = `
+    <div class="form-group">
+      <label>Durada de la sessió:</label>
+      <select id="tirada-durada-${dayIndex}" class="custom-select">
+        ${duradaOptions}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Ritme mitjà:</label>
+      <select id="tirada-ritme-${dayIndex}" class="custom-select">
+        <option value="" disabled selected>Tria el ritme...</option>
+        ${ritmeOptions}
+      </select>
+    </div>
+    <button class="btn btn-success" style="margin-top:15px;" onclick="saveCustomRun(${dayIndex}, 'Tirada Llarga')">Guardar i Planejar</button>
+  `;
+};
+
+window.showSeriesForm = function(dayIndex) {
+  const area = document.getElementById(`correr-form-area-${dayIndex}`);
+  let quantitatOptions = '';
+  for(let i = 2; i <= 20; i++) {
+    quantitatOptions += `<option value="${i}">${i} sèries</option>`;
+  }
+  
+  let ritmeOptions = '';
+  for(let m = 3; m <= 6; m++) {
+    for(let s = 0; s < 60; s+=5) {
+      const sStr = s < 10 ? '0'+s : s;
+      ritmeOptions += `<option value="${m}:${sStr}">${m}:${sStr} min/km</option>`;
+    }
+  }
+
+  area.innerHTML = `
+    <div class="form-group">
+      <label>Quantitat de Sèries:</label>
+      <select id="series-quantitat-${dayIndex}" class="custom-select">
+        ${quantitatOptions}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Ritme de la sèrie:</label>
+      <select id="series-ritme-${dayIndex}" class="custom-select">
+        <option value="" disabled selected>Tria el ritme...</option>
+        ${ritmeOptions}
+      </select>
+    </div>
+    <button class="btn btn-success" style="margin-top:15px;" onclick="saveCustomRun(${dayIndex}, 'Sèries')">Guardar i Planejar</button>
+  `;
+};
+
+window.saveCustomRun = function(dayIndex, tipus) {
+  let desc = '';
+  if(tipus === 'Tirada Llarga') {
+    const durada = document.getElementById(`tirada-durada-${dayIndex}`).value;
+    const ritme = document.getElementById(`tirada-ritme-${dayIndex}`).value;
+    if(!ritme) return alert('Si us plau esull el ritme.');
+    desc = `Tirada Llarga: ${durada} minuts a ${ritme} min/km.`;
+  } else {
+    const quant = document.getElementById(`series-quantitat-${dayIndex}`).value;
+    const ritme = document.getElementById(`series-ritme-${dayIndex}`).value;
+    if(!ritme) return alert('Si us plau esull el ritme.');
+    desc = `${quant} Sèries a ${ritme} min/km (Escalfament i refredament a part).`;
+  }
+  
+  setPlanned(dayIndex, 'Correr', desc);
 };
 
 window.setPlanned = function(dayIndex, category, description) {
